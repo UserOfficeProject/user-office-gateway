@@ -4,25 +4,30 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "tsc": "tsc",
-    "prod": "tsc && env NODE_ENV=production node ./build/index.js",
-    "dev": "env NODE_ENV=development ts-node-dev --respawn -T ./index.ts",
-    "lint": "tsc --noEmit && eslint . --ext .js,.ts --quiet",
-    "lint:fix": "tsc --noEmit && eslint . --ext .js,.ts --fix --quiet"
+    "build": "rm -rf ./build && tsc",
+    "prod": "npm run build && env NODE_ENV=production node ./build/index.js",
+    "dev": "ts-node-dev --respawn ./src/index.ts",
+    "lint": "tsc --noEmit && eslint ./src --ext .js,.ts --quiet",
+    "lint:fix": "tsc --noEmit && eslint ./src --ext .js,.ts --fix --quiet"
+  },
+  "lint-staged": {
+    "**/*.{js,ts}": "npm run lint"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run lint"
+      "pre-commit": "lint-staged"
     }
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@apollo/gateway": "^0.20.0",
+    "@esss-swap/duo-logger": "^1.0.3",
     "apollo-graphql": "^0.6.0",
     "apollo-server": "^2.17.0",
     "class-transformer": "^0.3.1",
     "class-validator": "^0.12.2",
+    "dotenv": "^8.2.0",
     "graphql": "^15.3.0",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "^1.0.0",
@@ -36,7 +41,8 @@
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-jest": "^23.6.0",
     "eslint-plugin-prettier": "^3.1.3",
-    "husky": "^4.2.5",
+    "husky": "^4.3.0",
+    "lint-staged": "^10.3.0",
     "prettier": "^1.19.1",
     "ts-node-dev": "^1.0.0-pre.62"
   }

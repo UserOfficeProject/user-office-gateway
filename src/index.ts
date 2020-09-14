@@ -1,9 +1,12 @@
+import 'dotenv/config';
+
 import 'reflect-metadata';
 import {
   ApolloGateway,
   RemoteGraphQLDataSource,
   ServiceEndpointDefinition,
 } from '@apollo/gateway';
+import { logger } from '@esss-swap/duo-logger';
 import { ApolloServer } from 'apollo-server';
 
 // just a simple example
@@ -16,13 +19,18 @@ async function bootstrap() {
     // example
     // the list or the url could come from config / env
     // { name: 'service-name', url: 'http://localhost:4001' },
+    { name: 'user-office', url: process.env.USER_OFFICE_BACKEND },
+    {
+      name: 'user-office-scheduler',
+      url: process.env.USER_OFFICE_SCHEDULER_BACKEND,
+    },
   ];
 
   const gateway = new ApolloGateway({
     serviceList,
 
     buildService({ url, name }) {
-      console.log('Registering service: `%s` (%s)', name, url);
+      logger.logInfo(`Registering service: '${name}' (${url})`, {});
 
       return new RemoteGraphQLDataSource<Partial<AppContext>>({
         url,
@@ -62,11 +70,26 @@ async function bootstrap() {
   server.listen({ port }).then(({ url }) => {
     // TODO: way may want to reuse the same GrayLogger implementation we already have
     // but first we should port it to a standalone util package
-    console.log(`Apollo Gateway ready at ${url}`);
+    logger.logInfo(`Apollo Gateway ready at ${url}`, {});
   });
 }
 
-bootstrap().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+let exits = 0;
+
+// it's possible the services aren't only yet, so be patient and wait and retry
+function retry() {
+  bootstrap().catch(e => {
+    logger.logError(`Api gateway error (tries: ${exits})`, e);
+
+    if (exits >= 5) {
+      process.exit(1);
+    }
+
+    setTimeout(() => {
+      exits++;
+      retry();
+    }, 15 * 1000);
+  });
+}
+
+retry();
