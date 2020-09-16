@@ -6,8 +6,9 @@
   "scripts": {
     "build": "rm -rf ./build && tsc",
     "prod": "npm run build && env NODE_ENV=production node ./build/index.js",
-    "dev": "ts-node-dev --respawn ./src/index.ts",
+    "dev": "ts-node-dev --rs --respawn --watch ./src ./src/index.ts",
     "lint": "tsc --noEmit && eslint ./src --ext .js,.ts --quiet",
+    "lint:all": "tsc --noEmit && eslint ./src --ext .js,.ts",
     "lint:fix": "tsc --noEmit && eslint ./src --ext .js,.ts --fix --quiet"
   },
   "lint-staged": {
