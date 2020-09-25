@@ -22,6 +22,6 @@ jobs:
     steps:
       - name: Dump GitHub context
         run: |
-          echo "github.ref "${GITHUB_REF#refs/heads/}"
+          echo "github.ref ${GITHUB_REF#refs/heads/}"
           echo "github.head_ref" ${{ github.head_ref }}
           echo "github.base_ref" ${{ github.base_ref }}
