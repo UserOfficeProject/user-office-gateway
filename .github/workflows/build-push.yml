@@ -6,7 +6,7 @@ name: Build && Push
 # events but only for the develop branch
 on:
   push:
-    branches: [SWAP-1088_Github_actions, develop]
+    branches: [master, develop]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -15,13 +15,37 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [12.x]
-
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Dump GitHub context
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract branch name
+        id: extract_branch
+        shell: bash
         run: |
-          echo "github.ref ${GITHUB_REF#refs/heads/}"
-          echo "github.head_ref" ${{ github.head_ref }}
-          echo "github.base_ref" ${{ github.base_ref }}
+          # Extract branch name
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+
+          # set output variable accessible in the action
+          echo ::set-output name=branch::${BRANCH_NAME}
+
+      # Runs a single command using the runners shell
+      - name: Extracted branch
+        run: echo "Extracted branch ${{ steps.extract_branch.outputs.branch }}"
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: dmsc/duo-gateway:${{ steps.extract_branch.outputs.branch }}
