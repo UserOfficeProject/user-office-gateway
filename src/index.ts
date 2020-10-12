@@ -20,6 +20,16 @@ interface AppContext {
   isValidToken: boolean;
 }
 
+const extractTokenFromHeader = (header: string | null): string | null => {
+  if (!header) {
+    return null;
+  }
+
+  const [, token] = header.split(' ');
+
+  return token ?? null;
+};
+
 class AuthProvider {
   constructor(private url: string) {}
 
@@ -32,11 +42,15 @@ class AuthProvider {
       }
     `;
 
-    const result = await request<{ isValid: boolean }>(this.url, query, {
-      token,
-    });
+    const result = await request<{ checkToken: { isValid: boolean } }>(
+      this.url,
+      query,
+      {
+        token,
+      }
+    );
 
-    return result.isValid;
+    return result.checkToken.isValid;
   }
 }
 
@@ -75,7 +89,10 @@ async function bootstrap() {
           }
 
           if (context.authToken) {
-            request.http?.headers.set('authorization', context.authToken);
+            request.http?.headers.set(
+              'authorization',
+              `Bearer ${context.authToken}`
+            );
           }
         },
       });
@@ -95,7 +112,8 @@ async function bootstrap() {
       // so make sure when you try to access `context` in `RemoteGraphQLDataSource`
       // you except the property to be undefined on startup
 
-      const authToken = req.header('authorization') ?? null;
+      const authHeader = req.header('authorization') ?? null;
+      const authToken = extractTokenFromHeader(authHeader);
 
       let isValidToken = false;
       if (authToken) {
