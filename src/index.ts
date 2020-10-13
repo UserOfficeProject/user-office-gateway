@@ -7,7 +7,7 @@ import {
   ServiceEndpointDefinition,
 } from '@apollo/gateway';
 import { logger } from '@esss-swap/duo-logger';
-import { ApolloServer } from 'apollo-server';
+import { ApolloServer, AuthenticationError } from 'apollo-server';
 import { request, gql } from 'graphql-request';
 
 type ServiceEndpoint = ServiceEndpointDefinition & {
@@ -84,8 +84,8 @@ async function bootstrap() {
       return new RemoteGraphQLDataSource<Partial<AppContext>>({
         url,
         willSendRequest({ request, context }) {
-          if (authCheck && context?.isValidToken === false) {
-            throw new Error('Not authorized');
+          if (authCheck && context.isValidToken === false) {
+            throw new AuthenticationError('Bad token');
           }
 
           if (context.authToken) {
