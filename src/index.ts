@@ -7,38 +7,93 @@ import {
   ServiceEndpointDefinition,
 } from '@apollo/gateway';
 import { logger } from '@esss-swap/duo-logger';
-import { ApolloServer } from 'apollo-server';
+import { ApolloServer, AuthenticationError } from 'apollo-server';
+import { request, gql } from 'graphql-request';
+
+type ServiceEndpoint = ServiceEndpointDefinition & {
+  authCheck: boolean;
+};
 
 // just a simple example
 interface AppContext {
-  userId: string;
+  authToken: string | null;
+  isValidToken: boolean;
 }
 
+const extractTokenFromHeader = (header: string | null): string | null => {
+  if (!header) {
+    return null;
+  }
+
+  const [, token] = header.split(' ');
+
+  return token ?? null;
+};
+
+class AuthProvider {
+  constructor(private url: string) {}
+
+  async checkToken(token: string) {
+    const query = gql`
+      query checkToken($token: String!) {
+        checkToken(token: $token) {
+          isValid
+        }
+      }
+    `;
+
+    const result = await request<{ checkToken: { isValid: boolean } }>(
+      this.url,
+      query,
+      {
+        token,
+      }
+    );
+
+    return result.checkToken.isValid;
+  }
+}
+
+const authProvider = new AuthProvider(process.env.USER_OFFICE_BACKEND!);
+
 async function bootstrap() {
-  const serviceList: ServiceEndpointDefinition[] = [
+  const serviceList: ServiceEndpoint[] = [
     // example
     // the list or the url could come from config / env
     // { name: 'service-name', url: 'http://localhost:4001' },
-    { name: 'user-office', url: process.env.USER_OFFICE_BACKEND },
+    {
+      name: 'user-office',
+      url: process.env.USER_OFFICE_BACKEND,
+      authCheck: false,
+    },
     {
       name: 'user-office-scheduler',
       url: process.env.USER_OFFICE_SCHEDULER_BACKEND,
+      authCheck: true,
     },
   ];
 
   const gateway = new ApolloGateway({
     serviceList,
 
-    buildService({ url, name }) {
-      logger.logInfo(`Registering service: '${name}' (${url})`, {});
+    buildService(params) {
+      const { url, name, authCheck } = params as ServiceEndpoint;
+
+      logger.logInfo(`Registering service: '${name}' (${url})`, { authCheck });
 
       return new RemoteGraphQLDataSource<Partial<AppContext>>({
         url,
         willSendRequest({ request, context }) {
-          request.http?.headers.set(
-            'user-id',
-            context?.userId || '<anonymous>'
-          );
+          if (authCheck && context.isValidToken === false) {
+            throw new AuthenticationError('Bad token');
+          }
+
+          if (context.authToken) {
+            request.http?.headers.set(
+              'authorization',
+              `Bearer ${context.authToken}`
+            );
+          }
         },
       });
     },
@@ -51,16 +106,21 @@ async function bootstrap() {
     executor,
     playground: true, // TODO: probably we don't want this in prod
     subscriptions: false,
-    context: ({ req }): AppContext => {
+    context: async ({ req }): Promise<AppContext> => {
       // Note: this runs only for incoming requests
       // during initialization this part won't run
       // so make sure when you try to access `context` in `RemoteGraphQLDataSource`
       // you except the property to be undefined on startup
 
-      // just a simple example, we could also decode the JWT token
-      const userId = (req.headers['user-id'] as string) || '';
+      const authHeader = req.header('authorization') ?? null;
+      const authToken = extractTokenFromHeader(authHeader);
 
-      return { userId };
+      let isValidToken = false;
+      if (authToken) {
+        isValidToken = await authProvider.checkToken(authToken);
+      }
+
+      return { authToken, isValidToken };
     },
   });
 

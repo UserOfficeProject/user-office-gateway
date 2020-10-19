@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rm -rf ./build && tsc",
     "prod": "npm run build && env NODE_ENV=production node ./build/index.js",
-    "dev": "ts-node-dev --rs --respawn --watch ./src ./src/index.ts",
+    "dev": "ts-node-dev --rs --respawn ./src/index.ts",
     "lint": "tsc --noEmit && eslint ./src --ext .js,.ts --quiet",
     "lint:all": "tsc --noEmit && eslint ./src --ext .js,.ts",
     "lint:fix": "tsc --noEmit && eslint ./src --ext .js,.ts --fix --quiet"
@@ -30,6 +30,7 @@
     "class-validator": "^0.12.2",
     "dotenv": "^8.2.0",
     "graphql": "^15.3.0",
+    "graphql-request": "^3.1.0",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "^1.0.0",
     "typescript": "^3.9.7"
