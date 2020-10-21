@@ -61,10 +61,11 @@ async function bootstrap() {
         url,
         willSendRequest({ request, context }) {
           if (includeAuthJwt) {
-            request.http?.headers.set(
-              'x-auth-jwt-payload',
+            const encodedPayload = Buffer.from(
               JSON.stringify(context.authJwtPayload) || ''
-            );
+            ).toString('base64');
+
+            request.http?.headers.set('x-auth-jwt-payload', encodedPayload);
           } else {
             if (context.authToken) {
               request.http?.headers.set(
