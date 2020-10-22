@@ -7,18 +7,18 @@ import {
   ServiceEndpointDefinition,
 } from '@apollo/gateway';
 import { logger } from '@esss-swap/duo-logger';
-import { ApolloServer, AuthenticationError } from 'apollo-server';
-import { request, gql } from 'graphql-request';
+import { ApolloServer } from 'apollo-server';
+
+import AuthProvider, { AuthJwtPayload } from './AuthProvider';
 
 type ServiceEndpoint = ServiceEndpointDefinition & {
-  authCheck: boolean;
+  includeAuthJwt: boolean;
 };
 
-// just a simple example
-interface AppContext {
+type AppContext = {
+  authJwtPayload: AuthJwtPayload | null;
   authToken: string | null;
-  isValidToken: boolean;
-}
+};
 
 const extractTokenFromHeader = (header: string | null): string | null => {
   if (!header) {
@@ -30,46 +30,20 @@ const extractTokenFromHeader = (header: string | null): string | null => {
   return token ?? null;
 };
 
-class AuthProvider {
-  constructor(private url: string) {}
-
-  async checkToken(token: string) {
-    const query = gql`
-      query checkToken($token: String!) {
-        checkToken(token: $token) {
-          isValid
-        }
-      }
-    `;
-
-    const result = await request<{ checkToken: { isValid: boolean } }>(
-      this.url,
-      query,
-      {
-        token,
-      }
-    );
-
-    return result.checkToken.isValid;
-  }
-}
-
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const authProvider = new AuthProvider(process.env.USER_OFFICE_BACKEND!);
 
 async function bootstrap() {
   const serviceList: ServiceEndpoint[] = [
-    // example
-    // the list or the url could come from config / env
-    // { name: 'service-name', url: 'http://localhost:4001' },
     {
       name: 'user-office',
       url: process.env.USER_OFFICE_BACKEND,
-      authCheck: false,
+      includeAuthJwt: false,
     },
     {
       name: 'user-office-scheduler',
       url: process.env.USER_OFFICE_SCHEDULER_BACKEND,
-      authCheck: true,
+      includeAuthJwt: true,
     },
   ];
 
@@ -77,22 +51,28 @@ async function bootstrap() {
     serviceList,
 
     buildService(params) {
-      const { url, name, authCheck } = params as ServiceEndpoint;
+      const { url, name, includeAuthJwt } = params as ServiceEndpoint;
 
-      logger.logInfo(`Registering service: '${name}' (${url})`, { authCheck });
+      logger.logInfo(`Registering service: '${name}' (${url})`, {
+        includeAuthJwt,
+      });
 
       return new RemoteGraphQLDataSource<Partial<AppContext>>({
         url,
         willSendRequest({ request, context }) {
-          if (authCheck && context.isValidToken === false) {
-            throw new AuthenticationError('Bad token');
-          }
+          if (includeAuthJwt) {
+            const encodedPayload = Buffer.from(
+              JSON.stringify(context.authJwtPayload) || ''
+            ).toString('base64');
 
-          if (context.authToken) {
-            request.http?.headers.set(
-              'authorization',
-              `Bearer ${context.authToken}`
-            );
+            request.http?.headers.set('x-auth-jwt-payload', encodedPayload);
+          } else {
+            if (context.authToken) {
+              request.http?.headers.set(
+                'authorization',
+                `Bearer ${context.authToken}`
+              );
+            }
           }
         },
       });
@@ -115,12 +95,15 @@ async function bootstrap() {
       const authHeader = req.header('authorization') ?? null;
       const authToken = extractTokenFromHeader(authHeader);
 
-      let isValidToken = false;
+      let authJwtPayload: AuthJwtPayload | null = null;
       if (authToken) {
-        isValidToken = await authProvider.checkToken(authToken);
+        const { isValid, payload } = await authProvider.checkToken(authToken);
+        if (isValid) {
+          authJwtPayload = payload;
+        }
       }
 
-      return { authToken, isValidToken };
+      return { authJwtPayload, authToken };
     },
   });
 
@@ -139,7 +122,7 @@ let exits = 0;
 // it's possible the services aren't only yet, so be patient and wait and retry
 function retry() {
   bootstrap().catch(e => {
-    logger.logError(`Api gateway error (tries: ${exits})`, e);
+    logger.logException(`Api gateway error (tries: ${exits})`, e);
 
     if (exits >= 5) {
       process.exit(1);
