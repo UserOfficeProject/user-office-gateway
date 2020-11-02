@@ -66,13 +66,14 @@ async function bootstrap() {
             ).toString('base64');
 
             request.http?.headers.set('x-auth-jwt-payload', encodedPayload);
-          } else {
-            if (context.authToken) {
-              request.http?.headers.set(
-                'authorization',
-                `Bearer ${context.authToken}`
-              );
-            }
+          }
+
+          // include the token as we may call the core directly from the scheduler
+          if (context.authToken) {
+            request.http?.headers.set(
+              'authorization',
+              `Bearer ${context.authToken}`
+            );
           }
         },
       });
