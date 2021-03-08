@@ -9,14 +9,17 @@ import {
 import { logger } from '@esss-swap/duo-logger';
 import { ApolloServer } from 'apollo-server';
 
-import AuthProvider, { AuthJwtPayload } from './AuthProvider';
+import AuthProvider, {
+  AuthJwtPayload,
+  AuthJwtApiTokenPayload,
+} from './AuthProvider';
 
 type ServiceEndpoint = ServiceEndpointDefinition & {
   includeAuthJwt: boolean;
 };
 
 type AppContext = {
-  authJwtPayload: AuthJwtPayload | null;
+  authJwtPayload: AuthJwtPayload | AuthJwtApiTokenPayload | null;
   authToken: string | null;
 };
 
@@ -49,7 +52,9 @@ async function bootstrap() {
 
   const gateway = new ApolloGateway({
     serviceList,
-
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    experimental_pollInterval:
+      process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
     buildService(params) {
       const { url, name, includeAuthJwt } = params as ServiceEndpoint;
 
@@ -96,10 +101,11 @@ async function bootstrap() {
       const authHeader = req.header('authorization') ?? null;
       const authToken = extractTokenFromHeader(authHeader);
 
-      let authJwtPayload: AuthJwtPayload | null = null;
+      let authJwtPayload: AuthJwtPayload | AuthJwtApiTokenPayload | null = null;
       if (authToken) {
         const { isValid, payload } = await authProvider.checkToken(authToken);
-        if (isValid) {
+
+        if (isValid && payload) {
           authJwtPayload = payload;
         }
       }
