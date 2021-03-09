@@ -52,9 +52,13 @@ async function bootstrap() {
 
   const gateway = new ApolloGateway({
     serviceList,
+
+    // in development poll frequently to detect any schema changes
+    // used by the docker-compose file in user-office core
     // eslint-disable-next-line @typescript-eslint/camelcase
     experimental_pollInterval:
       process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
+
     buildService(params) {
       const { url, name, includeAuthJwt } = params as ServiceEndpoint;
 
@@ -118,8 +122,6 @@ async function bootstrap() {
   const port = +process.env.GATEWAY_PORT! || 4100;
 
   server.listen({ port }).then(({ url }) => {
-    // TODO: way may want to reuse the same GrayLogger implementation we already have
-    // but first we should port it to a standalone util package
     logger.logInfo(`Apollo Gateway ready at ${url}`, {});
   });
 }
