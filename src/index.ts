@@ -133,7 +133,7 @@ function retry() {
   bootstrap().catch(e => {
     logger.logException(`Api gateway error (tries: ${exits})`, e);
 
-    if (exits >= 5) {
+    if (process.env.KEEP_RETRYING !== '1' && exits >= 5) {
       process.exit(1);
     }
 
