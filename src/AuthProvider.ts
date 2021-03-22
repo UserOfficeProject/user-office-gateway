@@ -10,6 +10,7 @@ export type User = {
 };
 
 export type AuthJwtPayload = { user: User; roles: Role[]; currentRole: Role };
+export type AuthJwtApiTokenPayload = { accessTokenId: string };
 
 export default class AuthProvider {
   constructor(private url: string) {}
@@ -20,12 +21,17 @@ export default class AuthProvider {
         checkToken(token: $token) {
           isValid
           payload {
-            user {
-              id
-              email
+            ... on AuthJwtPayload {
+              user {
+                id
+                email
+              }
+              roles {
+                shortCode
+              }
             }
-            roles {
-              shortCode
+            ... on AuthJwtApiTokenPayload {
+              accessTokenId
             }
           }
         }
@@ -33,7 +39,10 @@ export default class AuthProvider {
     `;
 
     const result = await request<{
-      checkToken: { isValid: boolean; payload: AuthJwtPayload };
+      checkToken: {
+        isValid: boolean;
+        payload?: AuthJwtPayload | AuthJwtApiTokenPayload;
+      };
     }>(this.url, query, {
       token,
     });

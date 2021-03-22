@@ -9,14 +9,17 @@ import {
 import { logger } from '@esss-swap/duo-logger';
 import { ApolloServer } from 'apollo-server';
 
-import AuthProvider, { AuthJwtPayload } from './AuthProvider';
+import AuthProvider, {
+  AuthJwtPayload,
+  AuthJwtApiTokenPayload,
+} from './AuthProvider';
 
 type ServiceEndpoint = ServiceEndpointDefinition & {
   includeAuthJwt: boolean;
 };
 
 type AppContext = {
-  authJwtPayload: AuthJwtPayload | null;
+  authJwtPayload: AuthJwtPayload | AuthJwtApiTokenPayload | null;
   authToken: string | null;
 };
 
@@ -49,6 +52,12 @@ async function bootstrap() {
 
   const gateway = new ApolloGateway({
     serviceList,
+
+    // in development poll frequently to detect any schema changes
+    // used by the docker-compose file in user-office core
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    experimental_pollInterval:
+      process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
 
     buildService(params) {
       const { url, name, includeAuthJwt } = params as ServiceEndpoint;
@@ -96,10 +105,11 @@ async function bootstrap() {
       const authHeader = req.header('authorization') ?? null;
       const authToken = extractTokenFromHeader(authHeader);
 
-      let authJwtPayload: AuthJwtPayload | null = null;
+      let authJwtPayload: AuthJwtPayload | AuthJwtApiTokenPayload | null = null;
       if (authToken) {
         const { isValid, payload } = await authProvider.checkToken(authToken);
-        if (isValid) {
+
+        if (isValid && payload) {
           authJwtPayload = payload;
         }
       }
@@ -112,8 +122,6 @@ async function bootstrap() {
   const port = +process.env.GATEWAY_PORT! || 4100;
 
   server.listen({ port }).then(({ url }) => {
-    // TODO: way may want to reuse the same GrayLogger implementation we already have
-    // but first we should port it to a standalone util package
     logger.logInfo(`Apollo Gateway ready at ${url}`, {});
   });
 }
@@ -125,7 +133,7 @@ function retry() {
   bootstrap().catch(e => {
     logger.logException(`Api gateway error (tries: ${exits})`, e);
 
-    if (exits >= 5) {
+    if (process.env.KEEP_RETRYING !== '1' && exits >= 5) {
       process.exit(1);
     }
 
