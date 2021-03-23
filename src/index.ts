@@ -58,7 +58,6 @@ async function bootstrap() {
     // eslint-disable-next-line @typescript-eslint/camelcase
     experimental_pollInterval:
       process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
-
     buildService(params) {
       const { url, name, includeAuthJwt } = params as ServiceEndpoint;
 
@@ -89,11 +88,8 @@ async function bootstrap() {
     },
   });
 
-  const { schema, executor } = await gateway.load();
-
   const server = new ApolloServer({
-    schema,
-    executor,
+    gateway,
     playground: true, // TODO: probably we don't want this in prod
     subscriptions: false,
     context: async ({ req }): Promise<AppContext> => {
@@ -121,7 +117,7 @@ async function bootstrap() {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const port = +process.env.GATEWAY_PORT! || 4100;
 
-  server.listen({ port }).then(({ url }) => {
+  return server.listen({ port }).then(({ url }) => {
     logger.logInfo(`Apollo Gateway ready at ${url}`, {});
   });
 }
