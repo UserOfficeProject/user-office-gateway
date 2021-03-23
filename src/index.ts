@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import 'dotenv/config';
 
 import 'reflect-metadata';
@@ -52,10 +53,8 @@ async function bootstrap() {
 
   const gateway = new ApolloGateway({
     serviceList,
-
     // in development poll frequently to detect any schema changes
     // used by the docker-compose file in user-office core
-    // eslint-disable-next-line @typescript-eslint/camelcase
     experimental_pollInterval:
       process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
     buildService(params) {
@@ -117,8 +116,17 @@ async function bootstrap() {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const port = +process.env.GATEWAY_PORT! || 4100;
 
-  return server.listen({ port }).then(({ url }) => {
+  await server.listen({ port }).then(({ url }) => {
     logger.logInfo(`Apollo Gateway ready at ${url}`, {});
+  });
+
+  // because of an unfortunate bug/behavior of polling is enabled (or not?) and the schema isn't available
+  // it will stop trying to resolve the schema in the future
+  // as a workaround explicitly check the status is throw error if the schema is not available
+  await gateway.serviceHealthCheck().catch(async err => {
+    await server.stop();
+
+    return Promise.reject(err);
   });
 }
 
