@@ -120,9 +120,9 @@ async function bootstrap() {
     logger.logInfo(`Apollo Gateway ready at ${url}`, {});
   });
 
-  // because of an unfortunate bug/behavior of polling is enabled (or not?) and the schema isn't available
-  // it will stop trying to resolve the schema in the future
-  // as a workaround explicitly check the status is throw error if the schema is not available
+  // because of an unfortunate bug/behavior if polling is enabled (or not?) and the schema isn't available
+  // it will stop trying to resolve the schema
+  // as a workaround explicitly check the status and throw error if the schema is not available
   await gateway.serviceHealthCheck().catch(async err => {
     await server.stop();
 
