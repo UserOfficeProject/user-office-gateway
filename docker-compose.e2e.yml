@@ -6,7 +6,7 @@ services:
     environment:
       USER_OFFICE_BACKEND: "${USER_OFFICE_BACKEND}"
       USER_OFFICE_SCHEDULER_BACKEND: ${USER_OFFICE_SCHEDULER_BACKEND}
-      NODE_ENV: production
+      NODE_ENV: development
     labels:
       - "traefik.frontend.rule=PathPrefix:/gateway, /graphql"
       - "traefik.port=4100"
