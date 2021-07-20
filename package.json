@@ -25,11 +25,11 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/gateway": "^0.21.4",
-    "@esss-swap/duo-logger": "^1.0.5",
+    "@esss-swap/duo-logger": "^1.1.0",
     "apollo-graphql": "^0.9.3",
     "apollo-server": "^2.25.2",
     "class-transformer": "^0.4.0",
-    "class-validator": "^0.12.2",
+    "class-validator": "^0.13.1",
     "dotenv": "^8.6.0",
     "graphql": "^15.5.1",
     "graphql-request": "^3.4.0",
