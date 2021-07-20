@@ -25,7 +25,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/gateway": "^0.21.4",
-    "@esss-swap/duo-logger": "^1.0.5",
+    "@esss-swap/duo-logger": "^1.1.0",
     "apollo-graphql": "^0.9.3",
     "apollo-server": "^2.21.0",
     "class-transformer": "^0.4.0",
