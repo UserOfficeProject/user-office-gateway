@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import 'dotenv/config';
 
 import 'reflect-metadata';
@@ -9,6 +8,10 @@ import {
 } from '@apollo/gateway';
 import { logger } from '@esss-swap/duo-logger';
 import { ApolloServer } from 'apollo-server';
+import {
+  ApolloServerPluginLandingPageDisabled,
+  ApolloServerPluginLandingPageGraphQLPlayground,
+} from 'apollo-server-core';
 
 import AuthProvider, {
   AuthJwtPayload,
@@ -64,10 +67,10 @@ async function bootstrap() {
         includeAuthJwt,
       });
 
-      return new RemoteGraphQLDataSource<Partial<AppContext>>({
+      return new RemoteGraphQLDataSource<AppContext>({
         url,
         willSendRequest({ request, context }) {
-          if (includeAuthJwt) {
+          if (includeAuthJwt && 'authJwtPayload' in context) {
             const encodedPayload = Buffer.from(
               JSON.stringify(context.authJwtPayload) || ''
             ).toString('base64');
@@ -76,7 +79,7 @@ async function bootstrap() {
           }
 
           // include the token as we may call the core directly from the scheduler
-          if (context.authToken) {
+          if ('authToken' in context && context.authToken) {
             request.http?.headers.set(
               'authorization',
               `Bearer ${context.authToken}`
@@ -89,8 +92,11 @@ async function bootstrap() {
 
   const server = new ApolloServer({
     gateway,
-    playground: true, // TODO: probably we don't want this in prod
-    subscriptions: false,
+    plugins: [
+      process.env.NODE_ENV === 'production'
+        ? ApolloServerPluginLandingPageDisabled()
+        : ApolloServerPluginLandingPageGraphQLPlayground(),
+    ],
     context: async ({ req }): Promise<AppContext> => {
       // Note: this runs only for incoming requests
       // during initialization this part won't run
@@ -123,7 +129,7 @@ async function bootstrap() {
   // because of an unfortunate bug/behavior if polling is enabled (or not?) and the schema isn't available
   // it will stop trying to resolve the schema
   // as a workaround explicitly check the status and throw error if the schema is not available
-  await gateway.serviceHealthCheck().catch(async err => {
+  await gateway.serviceHealthCheck().catch(async (err) => {
     await server.stop();
 
     return Promise.reject(err);
@@ -134,7 +140,7 @@ let exits = 0;
 
 // it's possible the services aren't only yet, so be patient and wait and retry
 function retry() {
-  bootstrap().catch(e => {
+  bootstrap().catch((e) => {
     logger.logException(`Api gateway error (tries: ${exits})`, e);
 
     if (process.env.KEEP_RETRYING !== '1' && exits >= 5) {
