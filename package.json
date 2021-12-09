@@ -27,7 +27,7 @@
     "@apollo/gateway": "^0.44.0",
     "@esss-swap/duo-logger": "^1.1.1",
     "apollo-graphql": "^0.9.3",
-    "apollo-server": "^3.4.0",
+    "apollo-server": "^3.5.0",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
     "dotenv": "^8.6.0",
