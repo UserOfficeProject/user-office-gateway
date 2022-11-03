@@ -10,3 +10,6 @@ services:
     labels:
       - "traefik.frontend.rule=PathPrefix:/gateway, /graphql"
       - "traefik.port=4100"
+    depends_on:
+      - backend
+      - scheduler-backend
