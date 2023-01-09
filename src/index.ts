@@ -3,15 +3,18 @@ import 'dotenv/config';
 import 'reflect-metadata';
 import {
   ApolloGateway,
+  IntrospectAndCompose,
   RemoteGraphQLDataSource,
   ServiceEndpointDefinition,
 } from '@apollo/gateway';
-import { logger } from '@esss-swap/duo-logger';
-import { ApolloServer } from 'apollo-server';
+import { ApolloServer, BaseContext, ContextFunction } from '@apollo/server';
+import { ApolloServerPluginLandingPageGraphQLPlayground } from '@apollo/server-plugin-landing-page-graphql-playground';
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import {
-  ApolloServerPluginLandingPageDisabled,
-  ApolloServerPluginLandingPageGraphQLPlayground,
-} from 'apollo-server-core';
+  StandaloneServerContextFunctionArgument,
+  startStandaloneServer,
+} from '@apollo/server/standalone';
+import { logger } from '@user-office-software/duo-logger';
 
 import AuthProvider, {
   AuthJwtPayload,
@@ -40,8 +43,32 @@ const extractTokenFromHeader = (header: string | null): string | null => {
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const authProvider = new AuthProvider(process.env.USER_OFFICE_BACKEND!);
 
+const context: ContextFunction<
+  [StandaloneServerContextFunctionArgument],
+  BaseContext
+> = async ({ req }): Promise<AppContext> => {
+  // Note: this runs only for incoming requests
+  // during initialization this part won't run
+  // so make sure when you try to access `context` in `RemoteGraphQLDataSource`
+  // you except the property to be undefined on startup
+
+  const authHeader = req.headers['authorization'] ?? null;
+  const authToken = extractTokenFromHeader(authHeader);
+
+  let authJwtPayload: AuthJwtPayload | AuthJwtApiTokenPayload | null = null;
+  if (authToken) {
+    const { isValid, payload } = await authProvider.checkToken(authToken);
+
+    if (isValid && payload) {
+      authJwtPayload = payload;
+    }
+  }
+
+  return { authJwtPayload, authToken };
+};
+
 async function bootstrap() {
-  const serviceList: ServiceEndpoint[] = [
+  const subgraphs: ServiceEndpoint[] = [
     {
       name: 'user-office',
       url: process.env.USER_OFFICE_BACKEND,
@@ -55,11 +82,13 @@ async function bootstrap() {
   ];
 
   const gateway = new ApolloGateway({
-    serviceList,
-    // in development poll frequently to detect any schema changes
-    // used by the docker-compose file in user-office core
-    experimental_pollInterval:
-      process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
+    // TODO: IntrospectAndCompose shouldn't be used in production: https://www.apollographql.com/docs/apollo-server/using-federation/apollo-gateway-setup/#composing-subgraphs-with-introspectandcompose
+    supergraphSdl: new IntrospectAndCompose({
+      subgraphs,
+    }),
+    // // in development poll frequently to detect any schema changes
+    // // used by the docker-compose file in user-office core
+    pollIntervalInMs: process.env.ENABLE_SERVICE_POLLING === '1' ? 5000 : 0,
     buildService(params) {
       const { url, name, includeAuthJwt } = params as ServiceEndpoint;
 
@@ -97,34 +126,16 @@ async function bootstrap() {
         ? ApolloServerPluginLandingPageDisabled()
         : ApolloServerPluginLandingPageGraphQLPlayground(),
     ],
-    context: async ({ req }): Promise<AppContext> => {
-      // Note: this runs only for incoming requests
-      // during initialization this part won't run
-      // so make sure when you try to access `context` in `RemoteGraphQLDataSource`
-      // you except the property to be undefined on startup
-
-      const authHeader = req.header('authorization') ?? null;
-      const authToken = extractTokenFromHeader(authHeader);
-
-      let authJwtPayload: AuthJwtPayload | AuthJwtApiTokenPayload | null = null;
-      if (authToken) {
-        const { isValid, payload } = await authProvider.checkToken(authToken);
-
-        if (isValid && payload) {
-          authJwtPayload = payload;
-        }
-      }
-
-      return { authJwtPayload, authToken };
-    },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const port = +process.env.GATEWAY_PORT! || 4100;
 
-  await server.listen({ port }).then(({ url }) => {
-    logger.logInfo(`Apollo Gateway ready at ${url}`, {});
+  const { url } = await startStandaloneServer(server, {
+    context,
+    listen: { port },
   });
+  logger.logInfo(`Apollo Gateway ready at ${url}`, {});
 
   // because of an unfortunate bug/behavior if polling is enabled (or not?) and the schema isn't available
   // it will stop trying to resolve the schema
