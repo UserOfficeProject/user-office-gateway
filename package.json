@@ -24,7 +24,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@apollo/gateway": "^2.4.1",
+    "@apollo/gateway": "^2.4.2",
     "@apollo/server": "^4.7.0",
     "@apollo/server-plugin-landing-page-graphql-playground": "^4.0.0",
     "@user-office-software/duo-logger": "^2.0.2",
