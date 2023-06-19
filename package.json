@@ -28,7 +28,7 @@
     "@apollo/server": "^4.7.4",
     "@apollo/server-plugin-landing-page-graphql-playground": "^4.0.1",
     "@user-office-software/duo-logger": "^2.0.2",
-    "dotenv": "^16.1.4",
+    "dotenv": "^16.3.1",
     "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",
     "reflect-metadata": "^0.1.13",
