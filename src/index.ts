@@ -8,12 +8,12 @@ import {
   ServiceEndpointDefinition,
 } from '@apollo/gateway';
 import { ApolloServer, BaseContext, ContextFunction } from '@apollo/server';
-import { ApolloServerPluginLandingPageGraphQLPlayground } from '@apollo/server-plugin-landing-page-graphql-playground';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import {
   StandaloneServerContextFunctionArgument,
   startStandaloneServer,
 } from '@apollo/server/standalone';
+import { ApolloServerPluginLandingPageGraphQLPlayground } from '@apollo/server-plugin-landing-page-graphql-playground';
 import { logger } from '@user-office-software/duo-logger';
 
 import AuthProvider, {
