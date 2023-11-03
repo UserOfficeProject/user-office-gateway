@@ -26,7 +26,6 @@
   "dependencies": {
     "@apollo/gateway": "^2.5.6",
     "@apollo/server": "^4.9.4",
-    "@apollo/server-plugin-landing-page-graphql-playground": "^4.0.1",
     "@user-office-software/duo-logger": "^2.0.2",
     "dotenv": "^16.3.1",
     "graphql": "^16.8.1",

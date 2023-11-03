@@ -9,11 +9,11 @@ import {
 } from '@apollo/gateway';
 import { ApolloServer, BaseContext, ContextFunction } from '@apollo/server';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import {
   StandaloneServerContextFunctionArgument,
   startStandaloneServer,
 } from '@apollo/server/standalone';
-import { ApolloServerPluginLandingPageGraphQLPlayground } from '@apollo/server-plugin-landing-page-graphql-playground';
 import { logger } from '@user-office-software/duo-logger';
 
 import AuthProvider, {
@@ -124,7 +124,10 @@ async function bootstrap() {
     plugins: [
       process.env.NODE_ENV === 'production'
         ? ApolloServerPluginLandingPageDisabled()
-        : ApolloServerPluginLandingPageGraphQLPlayground(),
+        : ApolloServerPluginLandingPageLocalDefault({
+            footer: false,
+            embed: { initialState: { pollForSchemaUpdates: false } },
+          }),
     ],
   });
 
