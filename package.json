@@ -24,7 +24,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@apollo/gateway": "^2.7.0",
+    "@apollo/gateway": "^2.7.1",
     "@apollo/server": "^4.10.0",
     "@user-office-software/duo-logger": "^2.0.2",
     "dotenv": "^16.4.1",
