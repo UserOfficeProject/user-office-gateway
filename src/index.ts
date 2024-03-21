@@ -20,6 +20,7 @@ import AuthProvider, {
   AuthJwtPayload,
   AuthJwtApiTokenPayload,
 } from './AuthProvider';
+import { configureGraylogLogger } from './config/configureGrayLogLogger';
 
 type ServiceEndpoint = ServiceEndpointDefinition & {
   includeAuthJwt: boolean;
@@ -68,6 +69,8 @@ const context: ContextFunction<
 };
 
 async function bootstrap() {
+  configureGraylogLogger();
+
   const subgraphs: ServiceEndpoint[] = [
     {
       name: 'user-office',
