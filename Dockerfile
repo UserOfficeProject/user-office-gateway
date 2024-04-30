@@ -25,6 +25,9 @@ WORKDIR /home/node/app
 COPY --from=build-stage --chown=node:node /home/node/app/build ./build
 COPY --from=build-stage --chown=node:node /home/node/app/package*.json ./
 
+# Disable husky prepare script in production (https://github.com/typicode/husky/issues/920)
+RUN npm pkg delete scripts.prepare
+
 RUN npm ci --only=production --loglevel error --no-fund
 
 EXPOSE 4100
