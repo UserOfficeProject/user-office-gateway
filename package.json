@@ -21,7 +21,7 @@
     "@apollo/server": "^4.10.4",
     "@user-office-software/duo-logger": "^2.2.1",
     "dotenv": "^16.4.5",
-    "graphql": "^16.8.1",
+    "graphql": "^16.8.2",
     "graphql-request": "^6.1.0",
     "reflect-metadata": "^0.2.2",
     "type-graphql": "^2.0.0-rc.1"
