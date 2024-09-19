@@ -45,6 +45,7 @@ jobs:
           tags: ghcr.io/userofficeproject/user-office-gateway:${{ steps.extract_branch.outputs.branch }}
 
       - name: Trigger pipeline
+        if: ${{ steps.extract_branch.outputs.branch == 'staging' }}
         uses: swapActions/trigger-useroffice-deployment@v1
         with:
           repository: ${{ github.repository }}
