@@ -18,7 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/gateway": "^2.9.3",
-    "@apollo/server": "^4.11.2",
+    "@apollo/server": "^4.11.3",
     "@user-office-software/duo-logger": "^2.2.1",
     "dotenv": "^16.4.7",
     "graphql": "^16.10.0",
