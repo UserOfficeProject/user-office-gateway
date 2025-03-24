@@ -20,12 +20,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 18.x
+          node-version: 22.x
 
       - name: Cache node_modules
         uses: actions/cache@v2
         env:
-          cache-name: 18.x-cache-node-modules
+          cache-name: 22.x-cache-node-modules
         with:
           path: ~/.npm
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
