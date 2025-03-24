@@ -27,6 +27,7 @@
     "type-graphql": "^2.0.0-rc.2"
   },
   "devDependencies": {
+    "@types/node": "^22.13.10",
     "@typescript-eslint/eslint-plugin": "^7.17.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
@@ -41,7 +42,7 @@
     "typescript": "^5.7.3"
   },
   "engines": {
-    "npm": ">=9.0.0",
-    "node": ">=18.0.0"
+    "npm": ">=10.9.2",
+    "node": ">=22.0.0"
   }
 }
