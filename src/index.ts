@@ -136,13 +136,17 @@ async function bootstrap() {
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const port = +process.env.GATEWAY_PORT! || 4100;
-
+  
   const { url } = await startStandaloneServer(server, {
     context,
     listen: { port },
   });
   logger.logInfo(`Apollo Gateway ready at ${url}`, {});
 
+  console.log("Waiting...");
+  await sleep(10000);
+  console.log("Done after 10 seconds");
+  
   // because of an unfortunate bug/behavior if polling is enabled (or not?) and the schema isn't available
   // it will stop trying to resolve the schema
   // as a workaround explicitly check the status and throw error if the schema is not available
@@ -171,4 +175,9 @@ function retry() {
   });
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 retry();
+
