@@ -1,0 +1,48 @@
+{
+  "name": "user-office-gateway",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "build": "rm -rf ./build && tsc",
+    "test": "exit 0",
+    "prod": "npm run build && env NODE_ENV=production node ./build/index.js",
+    "dev": "ts-node-dev --rs --respawn ./src/index.ts",
+    "dev:docker": "npm install && ts-node-dev --rs --respawn ./src/index.ts",
+    "lint": "tsc --noEmit && eslint ./src --ext .js,.ts --quiet",
+    "lint:all": "tsc --noEmit && eslint ./src --ext .js,.ts",
+    "lint:fix": "tsc --noEmit && eslint ./src --ext .js,.ts --fix --quiet",
+    "prepare": "husky"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/gateway": "^2.10.1",
+    "@apollo/server": "^4.11.3",
+    "@user-office-software/duo-logger": "^2.3.2",
+    "dotenv": "^16.4.7",
+    "graphql": "^16.10.0",
+    "graphql-request": "^7.2.0",
+    "reflect-metadata": "^0.2.2",
+    "type-graphql": "^2.0.0-rc.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@typescript-eslint/eslint-plugin": "^7.17.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "3.4.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "npm": ">=10.9.2",
+    "node": ">=22.0.0"
+  }
+}
